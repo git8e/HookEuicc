@@ -34,13 +34,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # The ubuntu-latest runner ships with the Android SDK preinstalled.
+      # android-actions/setup-android is intentionally not used: it tries to
+      # install the legacy "tools" package, which no longer exists.
       - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT" -path '*/cmdline-tools/*/bin/sdkmanager' -type f 2>/dev/null | head -n1)"
+          echo "Using sdkmanager: ${SDKMANAGER}"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0" > /dev/null
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
