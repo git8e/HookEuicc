@@ -2,6 +2,17 @@ plugins {
     id 'com.android.application'
 }
 
+// Optional release signing. Create a keystore.properties file in the project root
+// (or provide the same values through CI secrets) to sign release builds with your
+// own key. When it is missing, release builds fall back to the debug key so that
+// they are still installable.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'cn.unicorn369.HookEuicc'
     compileSdk 35
@@ -14,10 +25,23 @@ android {
         versionName "1.0.1"
     }
 
+    signingConfigs {
+        release {
+            if (hasKeystore) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Always produce a signed APK: custom key when configured, debug key otherwise.
+            signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
         }
     }
     compileOptions {
@@ -27,6 +51,6 @@ android {
 }
 
 dependencies {
-    compileOnly 'io.github.libxposed:api:102.0.0-SNAPSHOT'
-    //implementation 'io.github.libxposed:service:102.0.0-SNAPSHOT'
+    compileOnly 'io.github.libxposed:api:102.0.0'
+    //implementation 'io.github.libxposed:service:102.0.0'
 }
